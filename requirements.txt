@@ -3,3 +3,5 @@ azure-keyvault-secrets
 openai
 fastapi
 uvicorn
+python-jose[cryptography]
+httpx
