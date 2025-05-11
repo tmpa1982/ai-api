@@ -29,7 +29,7 @@ async def ask_question():
         messages=[
             {
                 "role": "system",
-                "content": "You are a helpful assistant.",
+                "content": "You are a helpful assistant that talks in piraty style.",
             },
             {
                 "role": "user",
