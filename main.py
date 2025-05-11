@@ -17,6 +17,10 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
+    return {"message": "Hello, World!"}
+
+@app.get("/models")
+async def list_models():
     return client.models.list().data
 
 if __name__ == "__main__":
