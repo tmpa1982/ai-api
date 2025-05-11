@@ -23,6 +23,24 @@ async def root():
 async def list_models():
     return client.models.list().data
 
+@app.post("/question")
+async def ask_question():
+    return client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful assistant.",
+            },
+            {
+                "role": "user",
+                "content": "I am going to Paris, what should I see?",
+            }
+        ],
+        model="gpt-4o-mini"
+    )
+
+    return response.choices[0].message.content
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
