@@ -1,6 +1,7 @@
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
 from fastapi import FastAPI
+from completion_request import CompletionRequest
 
 key_vault_url = "https://tran-akv.vault.azure.net/"
 
@@ -24,8 +25,8 @@ async def list_models():
     return client.models.list().data
 
 @app.post("/question")
-async def ask_question():
-    return client.chat.completions.create(
+async def ask_question(request: CompletionRequest):
+    response = client.chat.completions.create(
         messages=[
             {
                 "role": "system",
@@ -33,7 +34,7 @@ async def ask_question():
             },
             {
                 "role": "user",
-                "content": "I am going to Paris, what should I see?",
+                "content": request.message,
             }
         ],
         model="gpt-4o-mini"

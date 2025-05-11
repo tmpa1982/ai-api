@@ -3,3 +3,4 @@ azure-keyvault-secrets
 openai
 fastapi
 uvicorn
+pydantic
