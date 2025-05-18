@@ -4,3 +4,7 @@ openai
 fastapi
 uvicorn
 pydantic
+openai-agents
+numpy
+sounddevice
+python-dotenv
