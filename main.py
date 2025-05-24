@@ -1,9 +1,14 @@
+import os
+
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
 from fastapi import FastAPI
 from completion_request import CompletionRequest
 
-key_vault_url = "https://tran-akv.vault.azure.net/"
+from agents import Runner, trace
+
+from triage_agent import triage_agent
+from akv import AzureKeyVault
 
 token_provider = get_bearer_token_provider(
     DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
@@ -13,6 +18,9 @@ client = AzureOpenAI(
     azure_endpoint="https://tran-openai.openai.azure.com/",
     azure_ad_token_provider=token_provider,
 )
+
+akv = AzureKeyVault()
+os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
 app = FastAPI()
 
@@ -41,6 +49,12 @@ async def ask_question(request: CompletionRequest):
     )
 
     return response.choices[0].message.content
+
+@app.post("/openai/question")
+async def ask_question(request: CompletionRequest):
+    with trace("Interview Prep Assistant"):
+        result = await Runner.run(triage_agent, request.message)
+        return result.final_output
 
 if __name__ == "__main__":
     import uvicorn

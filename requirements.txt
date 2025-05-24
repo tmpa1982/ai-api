@@ -2,6 +2,7 @@ azure-identity
 azure-keyvault-secrets
 azure-storage-blob
 openai
+openai-agents
 fastapi
 uvicorn
 pydantic
