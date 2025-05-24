@@ -3,6 +3,7 @@ import os
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from completion_request import CompletionRequest
 
 from agents import Runner, trace
@@ -23,6 +24,18 @@ akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:5173",  # Vite dev server
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 async def root():
