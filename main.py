@@ -27,6 +27,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost:5173",  # Vite dev server
+    "https://tran-llm-ui.azurewebsites.net",
 ]
 
 app.add_middleware(
