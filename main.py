@@ -2,12 +2,12 @@ import os
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from completion_request import CompletionRequest
 
 from agents import Runner, trace
-
+from auth import get_user_from_easy_auth
 from triage_agent import triage_agent
 from akv import AzureKeyVault
 
@@ -47,7 +47,7 @@ async def list_models():
     return client.models.list().data
 
 @app.post("/question")
-async def ask_question(request: CompletionRequest):
+async def ask_question(request: CompletionRequest, user = Depends(get_user_from_easy_auth)):
     response = client.chat.completions.create(
         messages=[
             {
@@ -65,7 +65,7 @@ async def ask_question(request: CompletionRequest):
     return response.choices[0].message.content
 
 @app.post("/openai/question")
-async def ask_question(request: CompletionRequest):
+async def ask_question(request: CompletionRequest, user = Depends(get_user_from_easy_auth)):
     with trace("Interview Prep Assistant"):
         result = await Runner.run(triage_agent, request.message)
         return result.final_output
