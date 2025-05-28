@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import sounddevice as sd
-from agents.voice import AudioInput, SingleAgentVoiceWorkflow, VoicePipeline
+from agents.voice import TTSModelSettings, VoicePipeline, VoicePipelineConfig, SingleAgentVoiceWorkflow, AudioInput
 import json
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -16,6 +16,8 @@ from agents import Runner, trace
 from auth import get_user_from_easy_auth
 from triage_agent import triage_agent
 from akv import AzureKeyVault
+from prompts.voice_prompts import voice_personality_prompt
+
 
 token_provider = get_bearer_token_provider(
     DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
@@ -30,6 +32,8 @@ akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
 app = FastAPI()
+custom_tts_settings=TTSModelSettings(instructions=voice_personality_prompt)
+
 
 origins = [
     "http://localhost:5173",  # Vite dev server
@@ -76,32 +80,6 @@ async def ask_question(request: CompletionRequest, user = Depends(get_user_from_
         result = await Runner.run(triage_agent, request.message)
         return result.final_output
 
-@app.post("/openai/voice_question")
-async def voice_question(request: VoiceRequest, user = Depends(get_user_from_easy_auth)):
-    # Create pipeline with triage agent
-    pipeline = VoicePipeline(workflow=SingleAgentVoiceWorkflow(triage_agent))
-    
-    # Use the audio data from the request
-    audio_input = AudioInput(buffer=request.to_numpy())
-
-    with trace("ACME App Voice Assistant"):
-        result = await pipeline.run(audio_input)
-
-        # Transfer the streamed result into chunks of audio
-        response_chunks = []
-        async for event in result.stream():
-            if event.type == "voice_stream_event_audio":
-                response_chunks.append(event.data)
-
-        # Combine chunks into final response
-        response_audio = np.concatenate(response_chunks, axis=0)
-        
-        # Return the audio data and sample rate to the client
-        return {
-            "audio_data": list(response_audio.flatten()),
-            "sample_rate": request.sample_rate
-        }
-
 @app.websocket("/openai/voice_stream")
 async def voice_websocket(websocket: WebSocket):
     await websocket.accept()
@@ -109,12 +87,12 @@ async def voice_websocket(websocket: WebSocket):
     try:
         # Get initial configuration from client
         config = await websocket.receive_json()
-        sr = sd.query_devices(kind='input')['default_samplerate']
-        samplerate = config.get('sample_rate', sr)
+        voice_pipeline_config = VoicePipelineConfig(tts_settings=custom_tts_settings)
+        samplerate = 28000
         print(f"Using sample rate: {samplerate}")
         
         while True:
-            pipeline = VoicePipeline(workflow=SingleAgentVoiceWorkflow(triage_agent))
+            pipeline = VoicePipeline(workflow=SingleAgentVoiceWorkflow(triage_agent), config=voice_pipeline_config)
             
             # Send ready signal to client
             await websocket.send_json({"status": "ready", "message": "Ready to record"})

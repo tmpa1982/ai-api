@@ -1,23 +1,38 @@
 # Not used in main.py but can be used to test the voice component
 
+import os
+import sys
+import asyncio
 import numpy as np
 import sounddevice as sd
-from agents.voice import AudioInput, SingleAgentVoiceWorkflow, VoicePipeline
+from pathlib import Path
+
+# Add parent directory to path to allow imports from parent
+parent_dir = str(Path(__file__).resolve().parent.parent)
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
+
+from agents.voice import TTSModelSettings, VoicePipeline, VoicePipelineConfig, SingleAgentVoiceWorkflow, AudioInput
+from agents import trace
 from triage_agent import triage_agent
-from agents import Runner, trace
-import asyncio
-import os
+from prompts.voice_prompts import voice_personality_prompt
 
 from akv import AzureKeyVault
 
 akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
-async def voice_assistant():
-    samplerate = sd.query_devices(kind='input')['default_samplerate']
+
+# Define custom TTS model settings with the desired instructions
+custom_tts_settings=TTSModelSettings(instructions=voice_personality_prompt)
+
+async def voice_assistant_optimized():
+    # samplerate = int(sd.query_devices(kind='input')['default_samplerate'])
+    samplerate = 28000
+    voice_pipeline_config = VoicePipelineConfig(tts_settings=custom_tts_settings)
 
     while True:
-        pipeline = VoicePipeline(workflow=SingleAgentVoiceWorkflow(triage_agent))
+        pipeline = VoicePipeline(workflow=SingleAgentVoiceWorkflow(triage_agent), config=voice_pipeline_config)
 
         # Check for input to either provide voice or exit
         cmd = input("Press Enter to speak your query (or type 'esc' to exit): ")
@@ -56,4 +71,4 @@ async def voice_assistant():
 
 # Run the voice assistant
 if __name__ == "__main__":
-    asyncio.run(voice_assistant())
+    asyncio.run(voice_assistant_optimized())
