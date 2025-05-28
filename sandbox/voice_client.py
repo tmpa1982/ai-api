@@ -11,6 +11,8 @@ async def voice_client():
     async with websockets.connect(uri) as websocket:
         # Send initial configuration
         samplerate = int(sd.query_devices(kind='input')['default_samplerate'])
+        samplerate = 33000
+
         await websocket.send(json.dumps({"sample_rate": samplerate}))
 
         while True:

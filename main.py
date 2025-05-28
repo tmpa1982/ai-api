@@ -9,7 +9,8 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from completion_request import CompletionRequest, VoiceRequest
+from schemas.voice_request import VoiceRequest
+from schemas.completion_request import CompletionRequest
 
 from agents import Runner, trace
 from auth import get_user_from_easy_auth
@@ -108,7 +109,9 @@ async def voice_websocket(websocket: WebSocket):
     try:
         # Get initial configuration from client
         config = await websocket.receive_json()
-        samplerate = config.get('sample_rate', 44100)
+        sr = sd.query_devices(kind='input')['default_samplerate']
+        samplerate = config.get('sample_rate', sr)
+        print(f"Using sample rate: {samplerate}")
         
         while True:
             pipeline = VoicePipeline(workflow=SingleAgentVoiceWorkflow(triage_agent))

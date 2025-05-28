@@ -1,4 +1,5 @@
-# %%
+# Not used in main.py but can be used to test the voice component
+
 import numpy as np
 import sounddevice as sd
 from agents.voice import AudioInput, SingleAgentVoiceWorkflow, VoicePipeline
@@ -8,14 +9,9 @@ import asyncio
 import os
 
 from akv import AzureKeyVault
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
-token_provider = get_bearer_token_provider(
-    DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
-)
 akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
-print(os.environ["OPENAI_API_KEY"])
 
 async def voice_assistant():
     samplerate = sd.query_devices(kind='input')['default_samplerate']
