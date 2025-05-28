@@ -6,3 +6,5 @@ openai-agents
 fastapi
 uvicorn
 pydantic
+websockets
+numpy
