@@ -8,7 +8,7 @@ from llm_agents.account_agent import account_agent
 triage_agent = Agent(
     name="Assistant",
     instructions=prompt_with_handoff_instructions("""
-You are the virtual assistant for Interview Prep. Welcome the user and ask how you can help.
+You are the virtual assistant for Interview Preparation. Welcome the user and ask how you can help.
 Based on the user's intent, route to:
 - KnowledgeAgent that stores my CV
 - SearchAgent for anything requiring real-time web search
