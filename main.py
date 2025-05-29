@@ -1,17 +1,25 @@
 import os
+import numpy as np
+import sounddevice as sd
+from agents.voice import TTSModelSettings, VoicePipeline, VoicePipelineConfig, SingleAgentVoiceWorkflow, AudioInput
+import json
+from fastapi import WebSocket, WebSocketDisconnect
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
 from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from completion_request import CompletionRequest
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 import httpx
+from schemas.voice_request import VoiceRequest
+from schemas.completion_request import CompletionRequest
 
 from agents import Runner, trace
 from triage_agent import triage_agent
 from akv import AzureKeyVault
+from prompts.voice_prompts import voice_personality_prompt
+
 
 token_provider = get_bearer_token_provider(
     DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
@@ -33,6 +41,8 @@ AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
 JWKS_URL = f"{AUTHORITY}/discovery/v2.0/keys"
 AUDIENCE = "api://6495a485-f811-440c-8e96-39d45f00aeab" # Application ID in Enterprise Applications
 ISSUER = f"https://sts.windows.net/{TENANT_ID}/"
+
+custom_tts_settings=TTSModelSettings(instructions=voice_personality_prompt)
 
 origins = [
     "http://localhost:5173",  # Vite dev server
@@ -118,6 +128,64 @@ async def ask_question(request: CompletionRequest, user = Depends(check_role("AP
     with trace("Interview Prep Assistant"):
         result = await Runner.run(triage_agent, request.message)
         return result.final_output
+
+@app.websocket("/openai/voice_stream")
+async def voice_websocket(websocket: WebSocket, user = Depends(check_role("APIUser"))):
+    await websocket.accept()
+    
+    try:
+        # Get initial configuration from client
+        config = await websocket.receive_json()
+        voice_pipeline_config = VoicePipelineConfig(tts_settings=custom_tts_settings)
+        samplerate = 28000
+        print(f"Using sample rate: {samplerate}")
+        
+        while True:
+            pipeline = VoicePipeline(workflow=SingleAgentVoiceWorkflow(triage_agent), config=voice_pipeline_config)
+            
+            # Send ready signal to client
+            await websocket.send_json({"status": "ready", "message": "Ready to record"})
+            
+            # Receive audio chunks from client
+            recorded_chunks = []
+            while True:
+                try:
+                    # Receive chunk as binary data
+                    chunk = await websocket.receive_bytes()
+                    if not chunk:  # Empty chunk signals end of recording
+                        break
+                    # Convert bytes to numpy array
+                    audio_chunk = np.frombuffer(chunk, dtype='int16')
+                    recorded_chunks.append(audio_chunk)
+                except WebSocketDisconnect:
+                    return
+            
+            if recorded_chunks:
+                # Concatenate chunks into single buffer
+                recording = np.concatenate(recorded_chunks, axis=0)
+                
+                # Process audio
+                audio_input = AudioInput(buffer=recording)
+                
+                with trace("ACME App Voice Assistant"):
+                    result = await pipeline.run(audio_input)
+                    
+                    # Stream response audio back to client
+                    await websocket.send_json({"status": "responding", "message": "Assistant is responding..."})
+                    
+                    async for event in result.stream():
+                        if event.type == "voice_stream_event_audio":
+                            # Send audio chunk as binary
+                            await websocket.send_bytes(event.data.tobytes())
+                    
+                    # Signal end of response
+                    await websocket.send_json({"status": "done", "message": "Response complete"})
+            
+    except WebSocketDisconnect:
+        print("Client disconnected")
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        await websocket.close()
 
 if __name__ == "__main__":
     import uvicorn

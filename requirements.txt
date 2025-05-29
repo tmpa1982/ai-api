@@ -8,3 +8,6 @@ uvicorn
 pydantic
 python-jose[cryptography]
 httpx
+websockets
+numpy
+sounddevice
