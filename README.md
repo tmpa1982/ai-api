@@ -38,7 +38,7 @@ The application includes a voice-based chat interface that allows you to speak w
 
 2. In a new terminal, launch the voice client:
    ```
-   python voice_client.py
+   python sandbox\voice_client.py
    ```
 
 3. Using the voice interface:
