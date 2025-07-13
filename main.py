@@ -31,8 +31,8 @@ security = HTTPBearer()
 TENANT_ID = "aa76d384-6e66-4f99-acef-1264b8cef053"
 AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
 JWKS_URL = f"{AUTHORITY}/discovery/v2.0/keys"
-AUDIENCE = "api://6495a485-f811-440c-8e96-39d45f00aeab" # Application ID in Enterprise Applications
-ISSUER = f"https://sts.windows.net/{TENANT_ID}/"
+AUDIENCE = "6495a485-f811-440c-8e96-39d45f00aeab" # Application ID in Enterprise Applications
+ISSUER = f"https://login.microsoftonline.com/{TENANT_ID}/v2.0"
 
 origins = [
     "http://localhost:5173",  # Vite dev server
