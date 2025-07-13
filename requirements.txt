@@ -6,3 +6,5 @@ openai-agents
 fastapi
 uvicorn
 pydantic
+python-jose[cryptography]
+httpx
