@@ -1,5 +1,6 @@
 from openai import OpenAI
 import os
+import logging
 
 from akv import AzureKeyVault
 from storage_account import AzureStorageAccount
@@ -36,12 +37,12 @@ def upload_files():
                 )
                 results.append({"file": file_name, "status": "success"})
             except Exception as e:
-                print(f"Error with {file_name}: {str(e)}")
+                logging.error(f"Error with {file_name}: {str(e)}")
                 results.append({"file": file_name, "status": "failed", "error": str(e)})
 
         return results
     except Exception as e:
-        print(f"Error during file upload: {str(e)}")
+        logging.error(f"Error during file upload: {str(e)}")
         return {"status": "failed", "error": str(e)}
 
 def create_vector_store(store_name: str) -> dict:
@@ -53,10 +54,10 @@ def create_vector_store(store_name: str) -> dict:
             "created_at": vector_store.created_at,
             "file_count": vector_store.file_counts.completed
         }
-        print("Vector store created:", details)
+        logging.info("Vector store created: %s", details)
         return details
     except Exception as e:
-        print(f"Error creating vector store: {e}")
+        logging.error(f"Error creating vector store: {e}")
         return {}
 
 def get_vector_store(store_name: str) -> dict:
@@ -71,13 +72,13 @@ def get_vector_store(store_name: str) -> dict:
                     "created_at": store.created_at,
                     "file_count": store.file_counts.completed
                 }
-                print("Existing vector store found:", details)
+                logging.info("Existing vector store found: %s", details)
                 return details
 
         # If no existing store is found, create a new one
         return create_vector_store(store_name)
     except Exception as e:
-        print(f"Error retrieving or creating vector store: {e}")
+        logging.error(f"Error retrieving or creating vector store: {e}")
         return {}
 
 vector_store = get_vector_store("Knowledge Base")

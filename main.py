@@ -1,9 +1,12 @@
 import os
 
+from logging_config import logging
+
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.requests import Request
 from completion_request import CompletionRequest
 
 from agents import Runner, trace
@@ -37,6 +40,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logging.info(f"Incoming request: {request.method} {request.url}")
+    response = await call_next(request)
+    logging.info(f"Response status: {response.status_code} for {request.method} {request.url}")
+    return response
 
 @app.get("/")
 async def root():
