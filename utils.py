@@ -59,7 +59,28 @@ def create_vector_store(store_name: str) -> dict:
         print(f"Error creating vector store: {e}")
         return {}
 
-vector_store = create_vector_store("Knowledge Base")
+def get_vector_store(store_name: str) -> dict:
+    try:
+        # Query existing vector stores
+        vector_stores = client.vector_stores.list()
+        for store in vector_stores:
+            if store.name == store_name:
+                details = {
+                    "id": store.id,
+                    "name": store.name,
+                    "created_at": store.created_at,
+                    "file_count": store.file_counts.completed
+                }
+                print("Existing vector store found:", details)
+                return details
+
+        # If no existing store is found, create a new one
+        return create_vector_store(store_name)
+    except Exception as e:
+        print(f"Error retrieving or creating vector store: {e}")
+        return {}
+
+vector_store = get_vector_store("Knowledge Base")
 
 def upload_files():
     try:
