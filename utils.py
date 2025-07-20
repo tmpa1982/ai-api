@@ -42,3 +42,5 @@ def create_vector_store(store_name: str) -> dict:
     except Exception as e:
         print(f"Error creating vector store: {e}")
         return {}
+
+vector_store = create_vector_store("Knowledge Base")
