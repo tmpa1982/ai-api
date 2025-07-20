@@ -48,8 +48,8 @@ async def list_models():
 
 @app.post("/upload")
 async def upload(user = Depends(check_role("APIUser"))):
-    from utils import upload_file
-    result = upload_file()
+    from utils import upload_files
+    result = upload_files()
     return result
 
 @app.post("/question")
