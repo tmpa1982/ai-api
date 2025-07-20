@@ -46,6 +46,12 @@ async def root():
 async def list_models():
     return client.models.list().data
 
+@app.post("/upload")
+async def upload(user = Depends(check_role("APIUser"))):
+    from utils import upload_file
+    result = upload_file()
+    return result
+
 @app.post("/question")
 async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))):
     response = client.chat.completions.create(

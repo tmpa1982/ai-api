@@ -1,8 +1,6 @@
 from agents import Agent, FileSearchTool
 from utils import vector_store, upload_file
 
-upload_file("Jia Yu Lee_CV.pdf", vector_store["id"])
-
 knowledge_agent = Agent(
     name="KnowledgeAgent",
     instructions=(

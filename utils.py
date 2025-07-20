@@ -9,7 +9,8 @@ client = OpenAI(api_key=openai_key)
 
 storage = AzureStorageAccount()
 
-def upload_file(file_name: str, vector_store_id: str):
+def upload_file():
+    file_name = "Jia Yu Lee_CV.pdf"
     file_path = "cv.pdf"
     try:
         storage.get_file(
@@ -20,7 +21,7 @@ def upload_file(file_name: str, vector_store_id: str):
 
         file_response = client.files.create(file=open(file_path, 'rb'), purpose="assistants")
         attach_response = client.vector_stores.files.create(
-            vector_store_id=vector_store_id,
+            vector_store_id=vector_store["id"],
             file_id=file_response.id
         )
         return {"file": file_name, "status": "success"}
