@@ -1,5 +1,5 @@
 from agents import Agent, FileSearchTool
-from utils import vector_store
+from vector_store import vector_store
 
 knowledge_agent = Agent(
     name="KnowledgeAgent",

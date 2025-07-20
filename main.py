@@ -48,7 +48,7 @@ async def list_models():
 
 @app.post("/upload")
 async def upload(user = Depends(check_role("APIUser"))):
-    from utils import upload_files
+    from vector_store import upload_files
     result = upload_files()
     return result
 

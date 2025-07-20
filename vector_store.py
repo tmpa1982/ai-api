@@ -81,38 +81,3 @@ def get_vector_store(store_name: str) -> dict:
         return {}
 
 vector_store = get_vector_store("Knowledge Base")
-
-def upload_files():
-    try:
-        download_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".download")
-        os.makedirs(download_dir, exist_ok=True)
-
-        blob_prefix = "cv"
-        blobs = storage.list_blobs(container_name="knowledgestore", prefix=blob_prefix)
-
-        results = []
-        for blob_name in blobs:
-            file_name = os.path.basename(blob_name)
-            download_path = os.path.join(download_dir, file_name)
-
-            storage.get_file(
-                container_name="knowledgestore",
-                blob_name=blob_name,
-                download_path=download_path
-            )
-
-            try:
-                file_response = client.files.create(file=open(download_path, 'rb'), purpose="assistants")
-                attach_response = client.vector_stores.files.create(
-                    vector_store_id=vector_store["id"],
-                    file_id=file_response.id
-                )
-                results.append({"file": file_name, "status": "success"})
-            except Exception as e:
-                print(f"Error with {file_name}: {str(e)}")
-                results.append({"file": file_name, "status": "failed", "error": str(e)})
-
-        return results
-    except Exception as e:
-        print(f"Error during file upload: {str(e)}")
-        return {"status": "failed", "error": str(e)}
