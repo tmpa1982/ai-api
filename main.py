@@ -2,16 +2,14 @@ import os
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
-from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from completion_request import CompletionRequest
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
-import httpx
 
 from agents import Runner, trace
 from triage_agent import triage_agent
 from akv import AzureKeyVault
+from auth_utils import check_role
 
 token_provider = get_bearer_token_provider(
     DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
@@ -26,13 +24,6 @@ akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
 app = FastAPI()
-security = HTTPBearer()
-
-TENANT_ID = "aa76d384-6e66-4f99-acef-1264b8cef053"
-AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
-JWKS_URL = f"{AUTHORITY}/discovery/v2.0/keys"
-AUDIENCE = "6495a485-f811-440c-8e96-39d45f00aeab" # Application ID in Enterprise Applications
-ISSUER = f"https://login.microsoftonline.com/{TENANT_ID}/v2.0"
 
 origins = [
     "http://localhost:5173",  # Vite dev server
@@ -46,46 +37,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Cache for public keys
-jwks = None
-
-async def get_public_keys():
-    global jwks
-    if jwks is None:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(JWKS_URL)
-            resp.raise_for_status()
-            jwks = resp.json()
-    return jwks
-
-async def verify_token(auth: HTTPAuthorizationCredentials = Depends(security)):
-    token = auth.credentials
-    keys = await get_public_keys()
-    try:
-        unverified_header = jwt.get_unverified_header(token)
-        kid = unverified_header["kid"]
-        key = next((k for k in keys["keys"] if k["kid"] == kid), None)
-        if not key:
-            raise HTTPException(status_code=401, detail="Public key not found.")
-        payload = jwt.decode(
-            token,
-            key,
-            algorithms=["RS256"],
-            audience=AUDIENCE,
-            issuer=ISSUER,
-        )
-        return payload
-    except JWTError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
-
-def check_role(required_role: str):
-    async def role_checker(payload: dict = Depends(verify_token)):
-        roles = payload.get("roles", [])
-        if required_role not in roles:
-            raise HTTPException(status_code=403, detail=f"Missing role: {required_role}")
-        return payload
-    return role_checker
 
 @app.get("/")
 async def root():
