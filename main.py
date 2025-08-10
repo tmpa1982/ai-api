@@ -13,6 +13,8 @@ from agents import Runner, trace
 from triage_agent import triage_agent
 from akv import AzureKeyVault
 from auth_utils import check_role
+from llm_agents.langgraph_chatbot import graph
+from langchain_core.messages import HumanMessage
 
 token_provider = get_bearer_token_provider(
     DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
@@ -32,6 +34,9 @@ origins = [
     "http://localhost:5173",  # Vite dev server
     "https://tran-llm-ui.azurewebsites.net",
 ]
+
+import uuid
+config = {"configurable": {"thread_id": str(uuid.uuid4())}}
 
 app.add_middleware(
     CORSMiddleware,
@@ -79,6 +84,16 @@ async def ask_question(request: CompletionRequest, user = Depends(check_role("AP
     )
 
     return response.choices[0].message.content
+
+@app.post("/langgraph/question")
+async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))):
+    result = graph.invoke(
+            {
+                "messages": [HumanMessage(content=request.message)],
+            },
+            config
+        )
+    return result['messages'][-1].content
 
 @app.post("/openai/question")
 async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))):
