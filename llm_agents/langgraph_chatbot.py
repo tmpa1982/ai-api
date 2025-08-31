@@ -10,18 +10,7 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, Tool
 from langgraph.types import Command
 from pydantic import BaseModel, Field
 from typing import Annotated, Optional, Literal
-from dotenv import load_dotenv
 import os
-
-if not os.getenv("OPENAI_API_KEY"):
-    loaded = load_dotenv()
-    if loaded and os.getenv("OPENAI_API_KEY"):
-        print("Loaded .env file and found OPENAI_API_KEY.")
-    else:
-        print("No OPENAI_API_KEY found in environment or .env file.")
-else:
-    print("OPENAI_API_KEY found in environment.")
-
 
 class InterviewInputState(MessagesState):
     """InputState is only 'messages'."""

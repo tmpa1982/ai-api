@@ -6,6 +6,10 @@ Generate and save Mermaid diagram from LangGraph chatbot
 import os
 import sys
 from pathlib import Path
+from akv import AzureKeyVault
+
+akv = AzureKeyVault()
+os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
 # Add the current directory to the path so we can import the chatbot
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
