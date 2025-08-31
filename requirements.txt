@@ -8,3 +8,7 @@ uvicorn
 pydantic
 python-jose[cryptography]
 httpx
+langchain-core
+langchain-openai
+langchain
+langgraph
