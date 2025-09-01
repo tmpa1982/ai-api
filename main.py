@@ -2,6 +2,10 @@ import os
 
 from logging_config import logging
 
+from akv import AzureKeyVault
+akv = AzureKeyVault()
+os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
+
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
 from fastapi import FastAPI, Depends
@@ -11,7 +15,6 @@ from completion_request import CompletionRequest
 
 from agents import Runner, trace
 from triage_agent import triage_agent
-from akv import AzureKeyVault
 from auth_utils import check_role
 from llm_agents.langgraph_chatbot import graph
 from langchain_core.messages import HumanMessage
@@ -24,9 +27,6 @@ client = AzureOpenAI(
     azure_endpoint="https://tran-openai.openai.azure.com/",
     azure_ad_token_provider=token_provider,
 )
-
-akv = AzureKeyVault()
-os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
 app = FastAPI()
 
