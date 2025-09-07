@@ -13,7 +13,7 @@ from typing import Annotated, Optional, Literal
 import os
 
 class InterviewInputState(MessagesState):
-    """InputState is only 'messages'."""
+    end_interview: Optional[bool] = Field(False, description="Indicates whether the interviewee press the end interview button")
 
 class InterviewState(TypedDict):
     messages: Annotated[list, add_messages]
@@ -22,12 +22,14 @@ class InterviewState(TypedDict):
     job_description: str
     triage_response: dict
     evaluator_scorecard: dict
+    end_interview: Optional[bool] = Field(False, description="Indicates whether the interviewee press the end interview button")
+
 
 class InterviewProcess(BaseModel):
     question: str = Field(
         description="Next question to ask the the interviewee",
     )
-    end_interview: bool = Field(
+    end_interview: Optional[bool] = Field(
         description="Whether the user wishes to conclude the interview based on the latest message",
         default=False,
     )
@@ -57,7 +59,7 @@ class EvaluatorScoreCard(BaseModel):
 class infoGathering(BaseModel):
     "Model for collecting all the information before starting the interview simulation"
 
-    interview_type: str = Field(
+    interview_type: Literal["Technical", "Behavioral", "Case Study", "Hiring Manager"] = Field(
         description="Type of interview the user would like to simulate",
     ) 
     company_description: str = Field(
@@ -79,13 +81,11 @@ class infoGathering(BaseModel):
 graph_builder = StateGraph(InterviewState, input=InterviewInputState)
 
 
-llm = init_chat_model("openai:gpt-4o-mini")
+llm = init_chat_model("openai:gpt-4o")
 
 def triage_agent(state: InterviewState) -> Command[Literal["interview_agent", "__end__"]]:
 
     print("---TRIAGE AGENT---")
-
-    print(state)
 
     if 'triage_response' in state:
         if not state['triage_response']['need_clarification']:
@@ -100,6 +100,10 @@ def triage_agent(state: InterviewState) -> Command[Literal["interview_agent", "_
         {messages}
         </Messages>
 
+    REMEMBER:
+    - Remember to be friendly and engaging but direct with the candidate. Be human-like so don't just jump in the first question.
+
+
     """
 
     prompt_content = TRIAGE_SYSTEM_PROMPT.format(
@@ -113,16 +117,18 @@ def triage_agent(state: InterviewState) -> Command[Literal["interview_agent", "_
 
     response = triage_model.invoke([HumanMessage(content=prompt_content)])
 
-    # print(response)
-
     if response.need_clarification:
         # End with clarifying question for user
+        print("ENDING WITH CLARIFYING QUESTION")
+        print("RESPONSE:", response)
         return Command(
             goto=END, 
             update={"messages": [AIMessage(content=response.question)]}
         )
     else:
         # Proceed to interview stage
+        print("PROCEEDING TO INTERVIEW AGENT")
+        print("RESPONSE:", response)
         return Command(
             goto="interview_agent", 
             update={"messages": [AIMessage(content=response.verification)],
@@ -132,7 +138,6 @@ def triage_agent(state: InterviewState) -> Command[Literal["interview_agent", "_
                     "triage_response": response.model_dump(),
                    }
         )
-
 
 def interview_agent(state: InterviewState) -> Command[Literal['evaluator_agent', '__end__']]:
 
@@ -152,6 +157,8 @@ def interview_agent(state: InterviewState) -> Command[Literal['evaluator_agent',
 
         Here is the type of interview:
         {interview_type}
+
+        Remember to be friendly and engaging but direct with the candidate. Be human-like so don't just jump in the first question.
     """
 
     interviewer_system_prompt = INTERVIEWER_SYSTEM_PROMPT.format(
@@ -159,7 +166,6 @@ def interview_agent(state: InterviewState) -> Command[Literal['evaluator_agent',
         company_description=state["company_description"],
         interview_type=state["interview_type"],
     )
-    # print(interviewer_system_prompt)
 
     interviewer_model = (
         llm
@@ -173,23 +179,28 @@ def interview_agent(state: InterviewState) -> Command[Literal['evaluator_agent',
 
     messages_str = get_buffer_string(messages)
 
-    print("Messages as string:", messages_str)
+    # print("Messages as string:", messages_str)
 
     response = interviewer_model.invoke([HumanMessage(content=messages_str)])
 
-    print("Structured response is:", response)
+    # print("Structured response is:", response)
 
-    if not response.end_interview:
-    # End with next interview question for the user
+    if response.end_interview:
+        # Proceed to evaluator stage
+        print("INTERVIEW ENDED, PROCEEDING TO EVALUATOR AGENT")
+        return Command(
+            goto="evaluator_agent", 
+        )
+    elif state['end_interview']:
+        print("INTERVIEW ENDED BY END INTERVIEW BUTTON, PROCEEDING TO EVALUATOR AGENT")
+        return Command(
+            goto="evaluator_agent", 
+        )
+    else:
+        print("NEXT INTERVIEW QUESTION")
         return Command(
             goto=END, 
             update={"messages": [AIMessage(content=response.question)]}
-        )
-    else:
-        # Proceed to evaluator stage
-        return Command(
-            goto="evaluator_agent", 
-            # update={"messages": [AIMessage(content=response.verification)]}
         )
 
 def evaluator_agent(state: InterviewState):
@@ -209,9 +220,13 @@ def evaluator_agent(state: InterviewState):
 
         And the type of interview was:
         {state["interview_type"]}
-    """
 
-    print(EVALUATOR_SYSTEM_PROMPT)
+        REMEMBER:
+        - You're an objective evaluator of the interview, be direct and burtally honest. 
+        - If the interview transcript is too short and lacking content, call it out as a poor interview, don't sugar code it.
+
+        Here's the interview transcript (Human is the interviewee and AI is the interviewer):
+    """
 
     evaluator_model = (
         llm

@@ -60,6 +60,7 @@ async def ask_question(request: CompletionRequest, user = Depends(check_role("AP
     result = graph.invoke(
             {
                 "messages": [HumanMessage(content=request.message)],
+                "end_interview": request.endInterview,
             },
             config
         )
