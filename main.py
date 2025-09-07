@@ -7,25 +7,17 @@ akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
-from openai import AzureOpenAI
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from completion_request import CompletionRequest
 
-from agents import Runner, trace
-from triage_agent import triage_agent
 from auth_utils import check_role
 from llm_agents.langgraph_chatbot import graph
 from langchain_core.messages import HumanMessage
 
 token_provider = get_bearer_token_provider(
     DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
-)
-client = AzureOpenAI(
-    api_version="2024-12-01-preview",
-    azure_endpoint="https://tran-openai.openai.azure.com/",
-    azure_ad_token_provider=token_provider,
 )
 
 app = FastAPI()
@@ -57,33 +49,11 @@ async def log_requests(request: Request, call_next):
 async def root():
     return {"message": "Hello, World!"}
 
-@app.get("/models")
-async def list_models():
-    return client.models.list().data
-
 @app.post("/upload")
 async def upload(user = Depends(check_role("APIUser"))):
     from vector_store import upload_files
     result = upload_files()
     return result
-
-@app.post("/question")
-async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))):
-    response = client.chat.completions.create(
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a helpful assistant that talks in piraty style.",
-            },
-            {
-                "role": "user",
-                "content": request.message,
-            }
-        ],
-        model="gpt-4o-mini"
-    )
-
-    return response.choices[0].message.content
 
 @app.post("/langgraph/question")
 async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))):
@@ -94,12 +64,6 @@ async def ask_question(request: CompletionRequest, user = Depends(check_role("AP
             config
         )
     return result['messages'][-1].content
-
-@app.post("/openai/question")
-async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))):
-    with trace("Interview Prep Assistant"):
-        result = await Runner.run(triage_agent, request.message)
-        return result.final_output
 
 if __name__ == "__main__":
     import uvicorn
