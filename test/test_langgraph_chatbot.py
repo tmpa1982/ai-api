@@ -9,8 +9,15 @@ import os
 # Add the parent directory to the path so we can import the chatbot
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from akv import AzureKeyVault
+akv = AzureKeyVault()
+os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
+
 from llm_agents.langgraph_chatbot import graph
 from langchain_core.messages import HumanMessage
+
+
+
 # from dotenv import load_dotenv
 # load_dotenv()
 print("hello")
@@ -31,6 +38,7 @@ def interactive_chat_test():
     print("🤖 LangGraph Chatbot Interactive Test")
     print("=" * 50)
     print("Type your messages and press Enter to chat with the bot.")
+    print("Type 'end' to signal end_interview to the bot for that turn.")
     print("Type 'quit' or 'exit' to end the test.")
     print("=" * 50)
     
@@ -47,7 +55,10 @@ def interactive_chat_test():
                 print("👋 Goodbye! Ending test.")
                 break
             
-            if not user_input:
+            # Determine if this turn should end the interview
+            end_flag = user_input.lower() == 'end'
+
+            if not user_input and not end_flag:
                 print("⚠️  Please enter a message.")
                 continue
             
@@ -56,7 +67,12 @@ def interactive_chat_test():
             
             result = graph.invoke(
                 {
-                    "messages": [HumanMessage(content=user_input)],
+                    "messages": [
+                        HumanMessage(
+                            content=("The interview has ended." if end_flag else user_input)
+                        )
+                    ],
+                    "end_interview": end_flag,
                 },
                 config
             )
