@@ -64,9 +64,10 @@ async def ask_question(request: CompletionRequest, user = Depends(check_role("AP
             },
             config
         )
-    if "evaluator_scorecard" in result:
-        return result["evaluator_scorecard"]
-    return result['messages'][-1].content
+    return {
+        "message": result['messages'][-1].content,
+        "evaluator_scorecard": result.get("evaluator_scorecard")
+    }
 
 if __name__ == "__main__":
     import uvicorn
