@@ -7,7 +7,7 @@ akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from completion_request import CompletionRequest
@@ -15,6 +15,8 @@ from completion_request import CompletionRequest
 from auth_utils import check_role
 from llm_agents.langgraph_chatbot import graph
 from langchain_core.messages import HumanMessage
+
+from storage_account import AzureStorageAccount
 
 token_provider = get_bearer_token_provider(
     DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
@@ -54,6 +56,28 @@ async def upload_vector_store(user = Depends(check_role("APIUser"))):
     from vector_store import upload_files
     result = upload_files()
     return result
+
+@app.post("/upload/storage_account")
+async def upload_storage_account(
+    file: UploadFile = File(...),
+    user = Depends(check_role("APIUser"))
+):
+    container_name = "knowledgestore"
+    try:
+        data = await file.read()
+        blob_prefix = "cv"
+        blob_name = f"{blob_prefix}/{file.filename}"
+        storage = AzureStorageAccount()
+        storage.upload_file(container_name, blob_name, data)
+
+        return {
+            "status": "success",
+            "container": container_name,
+            "blob": blob_name,
+            "size_bytes": len(data),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/langgraph/question")
 async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))):
