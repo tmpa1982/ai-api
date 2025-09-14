@@ -20,3 +20,11 @@ class AzureStorageAccount:
         container_client = self.blob_service_client.get_container_client(container_name)
         blobs = container_client.list_blobs(name_starts_with=prefix)
         return [blob.name for blob in blobs]
+
+    def upload_file(self, container_name: str, blob_name: str, data: bytes):
+        """Uploads a local file to Azure Blob Storage."""
+        blob_client = self.blob_service_client.get_blob_client(
+            container=container_name,
+            blob=blob_name
+        )
+        blob_client.upload_blob(data, overwrite=True)
