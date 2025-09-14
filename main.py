@@ -49,8 +49,8 @@ async def log_requests(request: Request, call_next):
 async def root():
     return {"message": "Hello, World!"}
 
-@app.post("/upload")
-async def upload(user = Depends(check_role("APIUser"))):
+@app.post("/upload/vector_store")
+async def upload_vector_store(user = Depends(check_role("APIUser"))):
     from vector_store import upload_files
     result = upload_files()
     return result
