@@ -30,7 +30,6 @@ origins = [
 ]
 
 import uuid
-config = {"configurable": {"thread_id": str(uuid.uuid4())}}
 
 app.add_middleware(
     CORSMiddleware,
@@ -81,6 +80,11 @@ async def upload_storage_account(
 
 @app.post("/langgraph/question")
 async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))):
+    # Generate thread_id based on authenticated user's email
+    user_email = user.get("preferred_username", "")
+    thread_id = f"thread_{user_email}" if user_email else f"thread_{uuid.uuid4()}"
+    config = {"configurable": {"thread_id": thread_id}}
+    
     result = graph.invoke(
             {
                 "messages": [HumanMessage(content=request.message)],
@@ -90,7 +94,8 @@ async def ask_question(request: CompletionRequest, user = Depends(check_role("AP
         )
     return {
         "message": result['messages'][-1].content,
-        "evaluator_scorecard": result.get("evaluator_scorecard")
+        "evaluator_scorecard": result.get("evaluator_scorecard"),
+        "thread_id": thread_id
     }
 
 if __name__ == "__main__":
