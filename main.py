@@ -78,6 +78,20 @@ async def upload_storage_account(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/upload/audio")
+async def upload_audio(file: UploadFile = File(...)):
+    logging.info(f"Received: {file.filename}, {file.content_type}")
+
+    upload_dir = ".upload"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = os.path.join(".upload", "received_chunk.webm")
+
+    contents = await file.read()
+    with open(file_path, "ab") as f:  # append for streaming
+        f.write(contents)
+
+    return {"status": "ok", "filename": file.filename, "size": len(contents)}
+
 @app.post("/langgraph/question")
 async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))):
     # Generate thread_id based on authenticated user's email
