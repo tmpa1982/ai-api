@@ -64,7 +64,7 @@ def interactive_chat_test():
             # Send message to chatbot
             print("🤖 Bot is thinking...")
             
-            result = graph.invoke(
+            result = graph.stream(
                 {
                     "messages": [
                         HumanMessage(
@@ -73,14 +73,18 @@ def interactive_chat_test():
                     ],
                     "end_interview": end_flag,
                 },
-                config
+                config,
+                stream_mode="messages"
             )
             
-            # Display bot response
-            if result and 'messages' in result and result['messages']:
-                bot_response = result['messages'][-1].content
-                print(f"🤖 Bot: {bot_response}")
-            else:
+            # Get the last AI message from the stream
+            last_ai_message = None
+            for chunk, metadata in result:
+                if hasattr(chunk, 'content') and chunk.content:
+                    last_ai_message = chunk.content
+                    print(f"🤖 Bot: {chunk.content}")
+            
+            if not last_ai_message:
                 print("❌ No response from bot")
                 
     except KeyboardInterrupt:
