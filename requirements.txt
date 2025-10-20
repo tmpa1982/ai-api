@@ -78,3 +78,10 @@ uvicorn==0.35.0
 websockets==15.0.1
 xxhash==3.5.0
 zstandard==0.24.0
+
+# audio packages (plus brew install)
+PyAudio==0.2.14
+kokoro==0.9.4
+ipython
+soundfile
+RealtimeSTT
