@@ -1,82 +1,18 @@
-from typing import Annotated
+from typing import Literal
 
 from langchain.chat_models import init_chat_model
-from typing_extensions import TypedDict
-
-from langgraph.graph import StateGraph, START, END, MessagesState
-from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage, get_buffer_string
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, get_buffer_string
 from langgraph.types import Command
-from pydantic import BaseModel, Field
-from typing import Annotated, Optional, Literal
-import os
 
-class InterviewInputState(MessagesState):
-    end_interview: Optional[bool] = Field(False, description="Indicates whether the interviewee press the end interview button")
-
-class InterviewState(TypedDict):
-    messages: Annotated[list, add_messages]
-    interview_type: str
-    company_description: str
-    job_description: str
-    triage_response: dict
-    evaluator_scorecard: dict
-    end_interview: Optional[bool] = Field(False, description="Indicates whether the interviewee press the end interview button")
-
-
-class InterviewProcess(BaseModel):
-    question: str = Field(
-        description="Next question to ask the the interviewee",
-    )
-    end_interview: Optional[bool] = Field(
-        description="Whether the user wishes to conclude the interview based on the latest message",
-        default=False,
-    )
-
-class EvaluatorScoreCard(BaseModel):
-    communication_score: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10] = Field(
-        description="Score for communication skills including clarity, articulation, confidence, and ability to explain complex concepts (1=Poor, 10=Excellent)",
-    )
-    technical_competency_score: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10] = Field(
-        description="Score for technical knowledge, problem-solving ability, accuracy of answers, and depth of understanding (1=Poor, 10=Excellent)",
-    )
-    behavioural_fit_score: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10] = Field(
-        description="Score for behavioral responses, cultural fit, leadership potential, teamwork, and situational handling (1=Poor, 10=Excellent)",
-    )
-    overall_score: Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10] = Field(
-        description="Overall interview performance score combining all dimensions (1=Poor, 10=Excellent)",
-    )
-    strengths: str = Field(
-        description="Detailed description of the candidate's key strengths demonstrated during the interview",
-        min_length=50,
-    )
-    areas_of_improvement: str = Field(
-        description="Specific areas where the candidate can improve, with actionable recommendations",
-        min_length=50,
-    )
-
-class infoGathering(BaseModel):
-    "Model for collecting all the information before starting the interview simulation"
-
-    interview_type: Literal["Technical", "Behavioral", "Case Study", "Hiring Manager"] = Field(
-        description="Type of interview the user would like to simulate",
-    ) 
-    company_description: str = Field(
-        description="Descripton the company you want to simulate the interview for",
-    )
-    job_description: str = Field(
-        description="Description of the role you're applying for",
-    )
-    need_clarification: bool = Field(
-        description="Whether the user needs to be asked a clarifying question.",
-    )
-    question: str = Field(
-        description="A question to ask the user to clarify the necessary information",
-    )
-    verification: str = Field(
-        description="Verify message that we will start interview after the user has provided the necessary information.",
-    )
+from .interview_models import (
+    InterviewState,
+    InterviewInputState,
+    InterviewProcess,
+    EvaluatorScoreCard,
+    infoGathering
+)
 
 graph_builder = StateGraph(InterviewState, input=InterviewInputState)
 
