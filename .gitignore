@@ -1,4 +1,5 @@
 __pycache__/
+.venv/
 .download/
 .upload/
 langgraph_chatbot_diagram.png
