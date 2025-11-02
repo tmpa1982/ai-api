@@ -1,25 +1,16 @@
 import os
 
-from fastapi.responses import JSONResponse
-import httpx
 
-from logging_config import logging
-
-from akv import AzureKeyVault
-akv = AzureKeyVault()
-os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
-
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
+import os
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
-from completion_request import CompletionRequest
+from logging_config import logging
+from akv import AzureKeyVault
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
-from auth_utils import check_role
-from llm_agents.langgraph_chatbot import graph
-from langchain_core.messages import HumanMessage
-
-from storage_account import AzureStorageAccount
+akv = AzureKeyVault()
+os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
 token_provider = get_bearer_token_provider(
     DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
@@ -37,8 +28,6 @@ origins = [
     "https://tran-llm-ui.azurewebsites.net",
 ]
 
-import uuid
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -54,89 +43,20 @@ async def log_requests(request: Request, call_next):
     logging.info(f"Response status: {response.status_code} for {request.method} {request.url}")
     return response
 
+# Import routers
+from routers import speech, upload, langgraph
+
+# Inject config values into routers (simple assignment for now)
+speech.AZURE_SPEECH_KEY = AZURE_SPEECH_KEY
+speech.AZURE_SPEECH_REGION = AZURE_SPEECH_REGION
+
+app.include_router(speech.router)
+app.include_router(upload.router)
+app.include_router(langgraph.router)
+
 @app.get("/")
 async def root():
     return {"message": "Hello, World!"}
-
-@app.get("/speech/token")
-async def get_speech_token(user = Depends(check_role("APIUser"))):
-    token_url = f"https://{AZURE_SPEECH_REGION}.api.cognitive.microsoft.com/sts/v1.0/issueToken"
-    headers = {
-        "Ocp-Apim-Subscription-Key": AZURE_SPEECH_KEY,
-        "Content-Type": "application/x-www-form-urlencoded",
-    }
-
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(token_url, headers=headers, content="")
-        if resp.status_code != 200:
-            raise HTTPException(status_code=500, detail="Failed to obtain speech token")
-
-    return JSONResponse({
-        "token": resp.text,
-        "region": AZURE_SPEECH_REGION,
-    })
-
-@app.post("/upload/vector_store")
-async def upload_vector_store(user = Depends(check_role("APIUser"))):
-    from vector_store import upload_files
-    result = upload_files()
-    return result
-
-@app.post("/upload/storage_account")
-async def upload_storage_account(
-    file: UploadFile = File(...),
-    user = Depends(check_role("APIUser"))
-):
-    container_name = "knowledgestore"
-    try:
-        data = await file.read()
-        blob_prefix = "cv"
-        blob_name = f"{blob_prefix}/{file.filename}"
-        storage = AzureStorageAccount()
-        storage.upload_file(container_name, blob_name, data)
-
-        return {
-            "status": "success",
-            "container": container_name,
-            "blob": blob_name,
-            "size_bytes": len(data),
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/upload/audio")
-async def upload_audio(file: UploadFile = File(...)):
-    logging.info(f"Received: {file.filename}, {file.content_type}")
-
-    upload_dir = ".upload"
-    os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(".upload", "received_chunk.webm")
-
-    contents = await file.read()
-    with open(file_path, "ab") as f:  # append for streaming
-        f.write(contents)
-
-    return {"status": "ok", "filename": file.filename, "size": len(contents)}
-
-@app.post("/langgraph/question")
-async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))):
-    # Generate thread_id based on authenticated user's email
-    user_email = user.get("preferred_username", "")
-    thread_id = f"thread_{user_email}" if user_email else f"thread_{uuid.uuid4()}"
-    config = {"configurable": {"thread_id": thread_id}}
-    
-    result = graph.invoke(
-            {
-                "messages": [HumanMessage(content=request.message)],
-                "end_interview": request.endInterview,
-            },
-            config
-        )
-    return {
-        "message": result['messages'][-1].content,
-        "evaluator_scorecard": result.get("evaluator_scorecard"),
-        "thread_id": thread_id
-    }
 
 if __name__ == "__main__":
     import uvicorn
