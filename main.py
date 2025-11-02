@@ -4,14 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from logging_config import logging
 from akv import AzureKeyVault
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
-
-token_provider = get_bearer_token_provider(
-    DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
-)
 
 AZURE_SPEECH_KEY = akv.get_secret("azure-speech-key")
 if not AZURE_SPEECH_KEY:
