@@ -1,4 +1,5 @@
 from typing import Literal
+import logging
 
 from langchain.chat_models import init_chat_model
 from langgraph.graph import StateGraph, START, END
@@ -14,6 +15,8 @@ from .interview_models import (
     infoGathering
 )
 
+logger = logging.getLogger(__name__)
+
 graph_builder = StateGraph(InterviewState, input=InterviewInputState)
 
 
@@ -21,7 +24,7 @@ llm = init_chat_model("openai:gpt-4o")
 
 def triage_agent(state: InterviewState) -> Command[Literal["interview_agent", "__end__"]]:
 
-    print("---TRIAGE AGENT---")
+    logger.info("---TRIAGE AGENT---")
 
     if 'triage_response' in state:
         if not state['triage_response']['need_clarification']:
@@ -55,16 +58,16 @@ def triage_agent(state: InterviewState) -> Command[Literal["interview_agent", "_
 
     if response.need_clarification:
         # End with clarifying question for user
-        print("ENDING WITH CLARIFYING QUESTION")
-        print("RESPONSE:", response)
+        logger.info("ENDING WITH CLARIFYING QUESTION")
+        logger.info("RESPONSE: %s", response)
         return Command(
             goto=END, 
             update={"messages": [AIMessage(content=response.question)]}
         )
     else:
         # Proceed to interview stage
-        print("PROCEEDING TO INTERVIEW AGENT")
-        print("RESPONSE:", response)
+        logger.info("PROCEEDING TO INTERVIEW AGENT")
+        logger.info("RESPONSE: %s", response)
         return Command(
             goto="interview_agent", 
             update={"messages": [AIMessage(content=response.verification)],
@@ -77,7 +80,7 @@ def triage_agent(state: InterviewState) -> Command[Literal["interview_agent", "_
 
 def interview_agent(state: InterviewState) -> Command[Literal['evaluator_agent', '__end__']]:
 
-    print("---INTERVIEW AGENT---")
+    logger.info("---INTERVIEW AGENT---")
 
     INTERVIEWER_SYSTEM_PROMPT = """
         You are a career coach specializing in helping people prepare for job interviews.
@@ -123,17 +126,17 @@ def interview_agent(state: InterviewState) -> Command[Literal['evaluator_agent',
 
     if response.end_interview:
         # Proceed to evaluator stage
-        print("INTERVIEW ENDED, PROCEEDING TO EVALUATOR AGENT")
+        logger.info("INTERVIEW ENDED, PROCEEDING TO EVALUATOR AGENT")
         return Command(
             goto="evaluator_agent", 
         )
     elif state['end_interview']:
-        print("INTERVIEW ENDED BY END INTERVIEW BUTTON, PROCEEDING TO EVALUATOR AGENT")
+        logger.info("INTERVIEW ENDED BY END INTERVIEW BUTTON, PROCEEDING TO EVALUATOR AGENT")
         return Command(
             goto="evaluator_agent", 
         )
     else:
-        print("NEXT INTERVIEW QUESTION")
+        logger.info("NEXT INTERVIEW QUESTION")
         return Command(
             goto=END, 
             update={"messages": [AIMessage(content=response.question)]}
@@ -141,7 +144,7 @@ def interview_agent(state: InterviewState) -> Command[Literal['evaluator_agent',
 
 def evaluator_agent(state: InterviewState):
 
-    print("---EVALUATOUR AGENT---")
+    logger.info("---EVALUATOR AGENT---")
 
     EVALUATOR_SYSTEM_PROMPT = f"""
         You are a career coach specializing in helping people prepare for job interviews.
@@ -172,10 +175,10 @@ def evaluator_agent(state: InterviewState):
 
     messages = [SystemMessage(content=EVALUATOR_SYSTEM_PROMPT)] + state["messages"]
     messages_str = get_buffer_string(messages)
-    print(messages_str)
+    logger.debug("Messages: %s", messages_str)
     response = evaluator_model.invoke([HumanMessage(content=messages_str)])
 
-    print(response)
+    logger.info("Evaluator response: %s", response)
 
     return {"evaluator_scorecard": response.model_dump(),
             "messages": [str(response.model_dump())]
