@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
+from fastapi.responses import RedirectResponse
 from logging_config import logging
 from akv import AzureKeyVault
 
@@ -39,7 +40,7 @@ app.include_router(langgraph.router)
 
 @app.get("/")
 async def root():
-    return {"message": "Hello, World!"}
+    return RedirectResponse(url="/docs")
 
 if __name__ == "__main__":
     import uvicorn
