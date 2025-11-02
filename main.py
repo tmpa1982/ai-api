@@ -1,5 +1,8 @@
 import os
 
+from fastapi.responses import JSONResponse
+import httpx
+
 from logging_config import logging
 
 from akv import AzureKeyVault
@@ -21,6 +24,11 @@ from storage_account import AzureStorageAccount
 token_provider = get_bearer_token_provider(
     DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
 )
+
+AZURE_SPEECH_KEY = akv.get_secret("azure-speech-key")
+if not AZURE_SPEECH_KEY:
+    raise ValueError("AZURE_SPEECH_KEY is not set in AKV")
+AZURE_SPEECH_REGION = "eastasia"
 
 app = FastAPI()
 
@@ -49,6 +57,24 @@ async def log_requests(request: Request, call_next):
 @app.get("/")
 async def root():
     return {"message": "Hello, World!"}
+
+@app.get("/speech/token")
+async def get_speech_token(user = Depends(check_role("APIUser"))):
+    token_url = f"https://{AZURE_SPEECH_REGION}.api.cognitive.microsoft.com/sts/v1.0/issueToken"
+    headers = {
+        "Ocp-Apim-Subscription-Key": AZURE_SPEECH_KEY,
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(token_url, headers=headers, content="")
+        if resp.status_code != 200:
+            raise HTTPException(status_code=500, detail="Failed to obtain speech token")
+
+    return JSONResponse({
+        "token": resp.text,
+        "region": AZURE_SPEECH_REGION,
+    })
 
 @app.post("/upload/vector_store")
 async def upload_vector_store(user = Depends(check_role("APIUser"))):
