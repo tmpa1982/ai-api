@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 import httpx
+from akv import AzureKeyVault
 from auth_utils import check_role
 
 router = APIRouter()
 
-# These should be injected or imported from main, but for now, set as None
-AZURE_SPEECH_KEY = None
-AZURE_SPEECH_REGION = None
+akv = AzureKeyVault()
+AZURE_SPEECH_KEY = akv.get_secret("azure-speech-key")
+if not AZURE_SPEECH_KEY:
+    raise ValueError("AZURE_SPEECH_KEY is not set in AKV")
+AZURE_SPEECH_REGION = "eastasia"
 
 @router.get("/speech/token")
 async def get_speech_token(user = Depends(check_role("APIUser"))):

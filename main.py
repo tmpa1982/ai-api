@@ -8,11 +8,6 @@ from akv import AzureKeyVault
 akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
-AZURE_SPEECH_KEY = akv.get_secret("azure-speech-key")
-if not AZURE_SPEECH_KEY:
-    raise ValueError("AZURE_SPEECH_KEY is not set in AKV")
-AZURE_SPEECH_REGION = "eastasia"
-
 app = FastAPI()
 
 origins = [
@@ -37,10 +32,6 @@ async def log_requests(request: Request, call_next):
 
 # Import routers
 from routers import speech, upload, langgraph
-
-# Inject config values into routers (simple assignment for now)
-speech.AZURE_SPEECH_KEY = AZURE_SPEECH_KEY
-speech.AZURE_SPEECH_REGION = AZURE_SPEECH_REGION
 
 app.include_router(speech.router)
 app.include_router(upload.router)
