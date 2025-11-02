@@ -10,14 +10,13 @@ On Windows
 
 ```
 az login
-.\venv\Scripts\activate.bat
-pip install -r requirements.txt
+uv sync
 ```
 
 ## Run API server
 
 ```
-uvicorn main:app
+uv run uvicorn main:app
 ```
 
 ## Run sandbox tools
