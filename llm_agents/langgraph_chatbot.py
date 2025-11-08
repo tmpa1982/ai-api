@@ -2,7 +2,7 @@ import logging
 
 from langchain.chat_models import init_chat_model
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.memory import InMemorySaver
 
 from .interview_models import (
     InterviewState,
@@ -25,5 +25,5 @@ graph_builder.add_node("triage_agent", triage_agent)
 graph_builder.add_node("evaluator_agent", evaluator_agent)
 
 graph_builder.add_edge(START, "triage_agent")
-memory = MemorySaver()
+memory = InMemorySaver()
 graph = graph_builder.compile(checkpointer=memory)
