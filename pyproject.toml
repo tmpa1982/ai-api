@@ -86,3 +86,8 @@ dependencies = [
     "xxhash",
     "zstandard",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]
