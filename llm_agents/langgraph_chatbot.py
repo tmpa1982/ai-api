@@ -1,5 +1,6 @@
 import logging
 
+from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
 
@@ -30,5 +31,11 @@ class ChatBotGraph:
         memory = InMemorySaver()
         self.graph = graph_builder.compile(checkpointer=memory)
 
-    def invoke(self, inputs, config):
-        return self.graph.invoke(inputs, config)
+    def invoke(self, message: str, terminate: bool, thread_id: str):
+        return self.graph.invoke(
+            {
+                "messages": [HumanMessage(content=message)],
+                "end_interview": terminate,
+            },
+            {"configurable": {"thread_id": thread_id}},
+        )

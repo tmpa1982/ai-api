@@ -43,9 +43,6 @@ def interactive_chat_test():
     print("Type 'quit' or 'exit' to end the test.")
     print("=" * 50)
     
-    # Create config with thread_id for checkpointing
-    config = {"configurable": {"thread_id": "interactive_test"}}
-    
     try:
         while True:
             # Get user input
@@ -69,15 +66,9 @@ def interactive_chat_test():
             llm = init_chat_model("openai:gpt-4o")
             graph = ChatBotGraph(llm)
             result = graph.invoke(
-                {
-                    "messages": [
-                        HumanMessage(
-                            content=("The interview has ended." if end_flag else user_input)
-                        )
-                    ],
-                    "end_interview": end_flag,
-                },
-                config
+                "The interview has ended." if end_flag else user_input,
+                end_flag,
+                "interactive_test",
             )
             
             # Display bot response
