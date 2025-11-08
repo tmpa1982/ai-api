@@ -71,9 +71,9 @@ def interactive_chat_test():
                 "interactive_test",
             )
             
+            bot_response = result["message"]
             # Display bot response
-            if result and 'messages' in result and result['messages']:
-                bot_response = result['messages'][-1].content
+            if bot_response:
                 print(f"🤖 Bot: {bot_response}")
             else:
                 print("❌ No response from bot")

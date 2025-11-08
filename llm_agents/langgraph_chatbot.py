@@ -32,10 +32,15 @@ class ChatBotGraph:
         self.graph = graph_builder.compile(checkpointer=memory)
 
     def invoke(self, message: str, terminate: bool, thread_id: str):
-        return self.graph.invoke(
+        result = self.graph.invoke(
             {
                 "messages": [HumanMessage(content=message)],
                 "end_interview": terminate,
             },
             {"configurable": {"thread_id": thread_id}},
         )
+        return {
+            "message": result['messages'][-1].content,
+            "evaluator_scorecard": result.get("evaluator_scorecard"),
+            "thread_id": thread_id
+        }
