@@ -4,7 +4,7 @@ from llm_agents.chatbot_graph import ChatBotGraph
 
 def test_invoke(mocker):
     evaluation_response = {"score": 10}
-    llm = mock_llm(mocker, evaluation_response)
+    llm = mock_llm(mocker, evaluation_response=evaluation_response)
     sut = ChatBotGraph(llm)
 
     message = "Hello, how are you?"
@@ -17,7 +17,7 @@ def test_invoke(mocker):
     assert message == evaluation_response
     assert response.thread_id == thread_id
 
-def mock_llm(mocker, evaluation_response):
+def mock_llm(mocker, **kwargs):
     llm = mocker.Mock()
 
     def _with_structured_output(schema):
@@ -36,7 +36,7 @@ def mock_llm(mocker, evaluation_response):
             resp.end_interview = True
             resp.question = "Next question"
         elif name == 'EvaluatorScoreCard':
-            resp.model_dump.return_value = evaluation_response
+            resp.model_dump.return_value = kwargs.get("evaluation_response", {"score": 10})
         else:
             raise ValueError(f"Unexpected schema: {name}")
 
