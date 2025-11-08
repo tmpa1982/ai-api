@@ -12,6 +12,7 @@ from .interview_models import (
     InterviewState,
     InterviewInputState,
 )
+from dto.chat_response import ChatResponse
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class ChatBotGraph:
         memory = InMemorySaver()
         self.graph = graph_builder.compile(checkpointer=memory)
 
-    def invoke(self, message: str, terminate: bool, thread_id: str):
+    def invoke(self, message: str, terminate: bool, thread_id: str) -> ChatResponse:
         result = self.graph.invoke(
             {
                 "messages": [HumanMessage(content=message)],
@@ -39,8 +40,9 @@ class ChatBotGraph:
             },
             {"configurable": {"thread_id": thread_id}},
         )
-        return {
-            "message": result['messages'][-1].content,
-            "evaluator_scorecard": result.get("evaluator_scorecard"),
-            "thread_id": thread_id
-        }
+        response = ChatResponse(
+            message=result['messages'][-1].content,
+            evaluator_scorecard=result.get("evaluator_scorecard"),
+            thread_id=thread_id,
+        )
+        return response

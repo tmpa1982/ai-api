@@ -71,7 +71,7 @@ def interactive_chat_test():
                 "interactive_test",
             )
             
-            bot_response = result["message"]
+            bot_response = result.message
             # Display bot response
             if bot_response:
                 print(f"🤖 Bot: {bot_response}")
