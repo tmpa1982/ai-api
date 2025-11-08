@@ -11,7 +11,7 @@ from .interview_models import (
 
 logger = logging.getLogger(__name__)
 
-graph_builder = StateGraph(InterviewState, input=InterviewInputState)
+graph_builder = StateGraph(InterviewState, input_schema=InterviewInputState)
 
 llm = init_chat_model("openai:gpt-4o")
 
