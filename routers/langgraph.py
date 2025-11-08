@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from dto.chat_response import ChatResponse
 from dto.completion_request import CompletionRequest
 from auth_utils import check_role
-from llm_agents.langgraph_chatbot import ChatBotGraph
+from llm_agents.chatbot_graph import ChatBotGraph
 from langchain.chat_models import init_chat_model
 import uuid
 

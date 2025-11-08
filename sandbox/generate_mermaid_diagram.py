@@ -17,7 +17,7 @@ os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 # Add the current directory to the path so we can import the chatbot
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from llm_agents.langgraph_chatbot import graph
+from llm_agents.chatbot_graph import graph
 
 
 def generate_mermaid_diagram():

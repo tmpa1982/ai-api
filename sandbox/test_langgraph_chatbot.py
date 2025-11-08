@@ -13,7 +13,7 @@ from akv import AzureKeyVault
 akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
-from llm_agents.langgraph_chatbot import ChatBotGraph
+from llm_agents.chatbot_graph import ChatBotGraph
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage
 
