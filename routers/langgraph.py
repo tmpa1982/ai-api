@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Depends
 from completion_request import CompletionRequest
 from auth_utils import check_role
-from llm_agents.langgraph_chatbot import graph
+from llm_agents.langgraph_chatbot import ChatBotGraph
+from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage
 import uuid
 
 router = APIRouter()
+
+llm = init_chat_model("openai:gpt-4o")
+graph = ChatBotGraph(llm)
 
 @router.post("/langgraph/question")
 async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))):

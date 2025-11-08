@@ -13,7 +13,8 @@ from akv import AzureKeyVault
 akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
-from llm_agents.langgraph_chatbot import graph
+from llm_agents.langgraph_chatbot import ChatBotGraph
+from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage
 
 
@@ -65,6 +66,8 @@ def interactive_chat_test():
             # Send message to chatbot
             print("🤖 Bot is thinking...")
             
+            llm = init_chat_model("openai:gpt-4o")
+            graph = ChatBotGraph(llm)
             result = graph.invoke(
                 {
                     "messages": [
