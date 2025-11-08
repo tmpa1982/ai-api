@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from completion_request import CompletionRequest
+from dto.completion_request import CompletionRequest
 from auth_utils import check_role
 from llm_agents.langgraph_chatbot import ChatBotGraph
 from langchain.chat_models import init_chat_model
