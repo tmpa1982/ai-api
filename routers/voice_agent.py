@@ -17,7 +17,7 @@ router = APIRouter()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 stt_service = STTService(model_size='large-v3', device='cpu')
 llm_service = LLMService(api_key=OPENAI_API_KEY, model="gpt-5-mini", cv_path="./cv.pdf")
-tts_service = TTSService(api_key=OPENAI_API_KEY, voice="alloy")
+tts_service = TTSService(voice="af_heart")
 
 
 @router.websocket("/ws")
