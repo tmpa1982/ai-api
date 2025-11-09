@@ -9,8 +9,8 @@ from faster_whisper import WhisperModel
 
 
 class STTService:
-    def __init__(self, api_key: str):
-        self.model = WhisperModel("large-v3", device="cpu", compute_type="int8")
+    def __init__(self, model_size: str, device: str):
+        self.model = WhisperModel(model_size_or_path=model_size, device=device, compute_type="int8")
     
     def transcribe(self, audio_bytes: bytes) -> str:
         """Convert audio bytes to text using Whisper API."""
