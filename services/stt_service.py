@@ -5,10 +5,12 @@ Speech-to-Text Service using OpenAI Whisper API.
 import tempfile
 import os
 from openai import OpenAI
+from faster_whisper import WhisperModel
+
 
 class STTService:
     def __init__(self, api_key: str):
-        self.client = OpenAI(api_key=api_key)
+        self.model = WhisperModel("large-v3", device="cpu", compute_type="int8")
     
     def transcribe(self, audio_bytes: bytes) -> str:
         """Convert audio bytes to text using Whisper API."""
@@ -45,12 +47,10 @@ class STTService:
             # Transcribe with Whisper
             # Pass the file path directly - OpenAI SDK will handle it
             with open(temp_file.name, "rb") as audio_file:
-                transcript = self.client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file,
-                    response_format="text"
-                )
-            
+                segments, _ = self.model.transcribe(temp_file.name)
+                # Concatenate all recognized text segments into a single string
+                transcript = "".join([segment.text for segment in segments])
+
             result = transcript.strip() if isinstance(transcript, str) else transcript.text.strip()
             print(f"[STT] Result: {result}")
             return result
