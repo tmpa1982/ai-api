@@ -32,11 +32,12 @@ async def log_requests(request: Request, call_next):
     return response
 
 # Import routers
-from routers import speech, upload, langgraph
+from routers import speech, upload, langgraph, voice_agent
 
 app.include_router(speech.router)
 app.include_router(upload.router)
 app.include_router(langgraph.router)
+app.include_router(voice_agent.router)
 
 @app.get("/")
 async def root():
