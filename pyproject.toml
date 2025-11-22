@@ -81,6 +81,7 @@ dependencies = [
     "starlette",
     "tenacity",
     "tiktoken",
+    "torch",
     "tqdm",
     "types-requests",
     "typing-extensions",
