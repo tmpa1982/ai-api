@@ -100,6 +100,7 @@ dev = [
 
 [tool.uv]
 extra-index-url = ["https://download.pytorch.org/whl/cpu"]
+index-strategy = "unsafe-best-match"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
