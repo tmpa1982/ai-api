@@ -98,7 +98,7 @@ class LLMService:
             )
         
         # Create the agent
-        self.agent = create_agent(self.model, self.tools, prompt=system_prompt, checkpointer=InMemorySaver())
+        self.agent = create_agent(self.model, self.tools, system_prompt=system_prompt, checkpointer=InMemorySaver())
     
     def generate_response(self, question: str, thread_id: Optional[str] = None) -> str:
         """
