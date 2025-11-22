@@ -7,7 +7,6 @@ from kokoro import KPipeline
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
-from IPython.display import display, Audio
 
 
 class TTSService:
