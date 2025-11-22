@@ -54,6 +54,7 @@ dependencies = [
     "orjson",
     "ormsgpack",
     "packaging",
+    "pip>=25.3",
     "pyasn1",
     "pycparser",
     "pydantic",
