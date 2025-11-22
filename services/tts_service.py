@@ -5,7 +5,7 @@ Text-to-Speech Service using OpenAI TTS API.
 from openai import OpenAI
 from kokoro import KPipeline
 import numpy as np
-import sounddevice as sd
+
 import soundfile as sf
 
 
