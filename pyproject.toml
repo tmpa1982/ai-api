@@ -21,6 +21,7 @@ dependencies = [
     "distro",
     "ecdsa",
     "fastapi",
+    "faster-whisper>=1.2.1",
     "greenlet",
     "griffe",
     "h11",
@@ -66,7 +67,6 @@ dependencies = [
     "python-jose",
     "python-multipart",
     "pyyaml",
-
     "referencing",
     "regex",
     "requests",
@@ -75,7 +75,7 @@ dependencies = [
     "rsa",
     "six",
     "sniffio",
-
+    "soundfile>=0.13.1",
     "sqlalchemy",
     "sse-starlette",
     "starlette",
