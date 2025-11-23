@@ -1,5 +1,6 @@
 import json
 import logging
+import base64
 from typing import Any, AsyncIterator, Dict, Optional, Sequence, Tuple
 
 from azure.cosmos import CosmosClient
@@ -40,15 +41,6 @@ class CosmosDBSaver(BaseCheckpointSaver):
         thread_id = config["configurable"]["thread_id"]
         checkpoint_ns = config["configurable"].get("checkpoint_ns", "")
         
-        # Determine user_id from thread_id or metadata
-        # Assuming thread_id format "thread_{user_email}" or "thread_{uuid}"
-        # And partition key is /UserId. 
-        # We will use thread_id as UserId for simplicity and uniqueness per thread if not explicitly provided.
-        # However, user specified partition key is /UserId.
-        # If we want to group by user, we should extract user_id. 
-        # But for now, let's use thread_id as the partition key value to ensure we can retrieve it easily by thread_id.
-        # Wait, if partition key is /UserId, we must provide it.
-        # Let's try to extract user_email from thread_id if possible, otherwise use thread_id.
         if thread_id.startswith("thread_"):
             user_id = thread_id[7:]
         else:
@@ -56,14 +48,20 @@ class CosmosDBSaver(BaseCheckpointSaver):
 
         parent_checkpoint_id = config["configurable"].get("checkpoint_id")
         
+        # Serialize checkpoint and metadata
+        cp_type, cp_bytes = self.serde.dumps_typed(checkpoint)
+        md_type, md_bytes = self.serde.dumps_typed(metadata)
+
         # Prepare the document
         doc = {
             "id": checkpoint["id"],
             "UserId": user_id,
             "thread_id": thread_id,
             "checkpoint_ns": checkpoint_ns,
-            "checkpoint": self.serde.dumps(checkpoint).decode("utf-8"),
-            "metadata": self.serde.dumps(metadata).decode("utf-8"),
+            "checkpoint_type": cp_type,
+            "checkpoint_data": base64.b64encode(cp_bytes).decode("utf-8"),
+            "metadata_type": md_type,
+            "metadata_data": base64.b64encode(md_bytes).decode("utf-8"),
             "parent_checkpoint_id": parent_checkpoint_id,
         }
 
@@ -71,7 +69,6 @@ class CosmosDBSaver(BaseCheckpointSaver):
             await self.container.upsert_item(doc)
         except CosmosHttpResponseError as e:
             logger.error(f"Failed to save checkpoint to Cosmos DB: {e}")
-            # Handle 429 (Too Many Requests) or other errors if needed
             raise e
 
         return {
@@ -126,8 +123,14 @@ class CosmosDBSaver(BaseCheckpointSaver):
                 raise e
 
     def _parse_item(self, item: dict, config: RunnableConfig) -> CheckpointTuple:
-        checkpoint = self.serde.loads(item["checkpoint"].encode("utf-8"))
-        metadata = self.serde.loads(item["metadata"].encode("utf-8"))
+        cp_type = item["checkpoint_type"]
+        cp_bytes = base64.b64decode(item["checkpoint_data"])
+        checkpoint = self.serde.loads_typed((cp_type, cp_bytes))
+
+        md_type = item["metadata_type"]
+        md_bytes = base64.b64decode(item["metadata_data"])
+        metadata = self.serde.loads_typed((md_type, md_bytes))
+        
         parent_checkpoint_id = item.get("parent_checkpoint_id")
         
         return CheckpointTuple(
@@ -167,12 +170,6 @@ class CosmosDBSaver(BaseCheckpointSaver):
 
         if before:
             query += " AND c._ts < @before_ts"
-            # This is tricky because we don't have the timestamp of 'before' readily available unless we fetch it.
-            # Assuming 'before' config has checkpoint_id, we might need to fetch it first to get its timestamp.
-            # For simplicity, let's ignore 'before' optimization for now or implement if strictly needed.
-            # Alternatively, if checkpoint IDs are time-ordered (like UUID v7 or similar), we could use that.
-            # But standard UUIDs are not. LangGraph uses UUIDs.
-            # Cosmos DB has _ts (timestamp).
             pass
 
         query += " ORDER BY c._ts DESC"
@@ -192,10 +189,6 @@ class CosmosDBSaver(BaseCheckpointSaver):
             logger.error(f"Failed to list checkpoints from Cosmos DB: {e}")
             raise e
 
-    # Sync methods are required by abstract base class but we can leave them NotImplemented or implement simple wrappers if needed.
-    # Since we are using this in an async context (FastAPI), we primarily need async methods.
-    # However, BaseCheckpointSaver might require sync methods to be defined.
-    
     def put(self, config: RunnableConfig, checkpoint: Checkpoint, metadata: CheckpointMetadata, new_versions: dict[str, Any]) -> RunnableConfig:
         raise NotImplementedError("Use aput for async CosmosDB operations")
 
