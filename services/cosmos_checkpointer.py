@@ -58,6 +58,7 @@ class CosmosDBSaver(BaseCheckpointSaver):
             "UserId": user_id,
             "thread_id": thread_id,
             "checkpoint_ns": checkpoint_ns,
+            "type": "checkpoint",
             "checkpoint_type": cp_type,
             "checkpoint_data": base64.b64encode(cp_bytes).decode("utf-8"),
             "metadata_type": md_type,
@@ -94,6 +95,8 @@ class CosmosDBSaver(BaseCheckpointSaver):
             # Get specific checkpoint
             try:
                 item = await self.container.read_item(item=checkpoint_id, partition_key=user_id)
+                if item.get("type") != "checkpoint":
+                    return None
                 return self._parse_item(item, config)
             except CosmosHttpResponseError as e:
                 if e.status_code == 404:
@@ -103,7 +106,7 @@ class CosmosDBSaver(BaseCheckpointSaver):
         else:
             # Get latest checkpoint
             # Query for the latest checkpoint for this thread
-            query = "SELECT * FROM c WHERE c.thread_id = @thread_id ORDER BY c._ts DESC OFFSET 0 LIMIT 1"
+            query = "SELECT * FROM c WHERE c.thread_id = @thread_id AND c.type = 'checkpoint' ORDER BY c._ts DESC OFFSET 0 LIMIT 1"
             parameters = [{"name": "@thread_id", "value": thread_id}]
             
             try:
@@ -165,7 +168,7 @@ class CosmosDBSaver(BaseCheckpointSaver):
         else:
             user_id = thread_id
             
-        query = "SELECT * FROM c WHERE c.thread_id = @thread_id"
+        query = "SELECT * FROM c WHERE c.thread_id = @thread_id AND c.type = 'checkpoint'"
         parameters = [{"name": "@thread_id", "value": thread_id}]
 
         if before:
