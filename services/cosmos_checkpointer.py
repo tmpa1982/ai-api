@@ -189,6 +189,54 @@ class CosmosDBSaver(BaseCheckpointSaver):
             logger.error(f"Failed to list checkpoints from Cosmos DB: {e}")
             raise e
 
+    async def aput_writes(
+        self,
+        config: RunnableConfig,
+        writes: Sequence[tuple[str, Any]],
+        task_id: str,
+        task_path: str = "",
+    ) -> None:
+        """Asynchronously store intermediate writes."""
+        thread_id = config["configurable"]["thread_id"]
+        checkpoint_ns = config["configurable"].get("checkpoint_ns", "")
+        checkpoint_id = config["configurable"].get("checkpoint_id")
+
+        if thread_id.startswith("thread_"):
+            user_id = thread_id[7:]
+        else:
+            user_id = thread_id
+
+        # We need to store these writes associated with the checkpoint/task
+        # Since CosmosDB is a document store, we can store them as separate documents
+        # or update the checkpoint document. 
+        # LangGraph seems to treat writes as separate entities that might be retrieved later.
+        # Let's store them as a separate document type "writes".
+        
+        for idx, (channel, value) in enumerate(writes):
+            # Serialize value
+            val_type, val_bytes = self.serde.dumps_typed(value)
+            
+            doc = {
+                "id": f"writes_{thread_id}_{checkpoint_id}_{task_id}_{idx}",
+                "UserId": user_id,
+                "thread_id": thread_id,
+                "checkpoint_ns": checkpoint_ns,
+                "checkpoint_id": checkpoint_id,
+                "task_id": task_id,
+                "task_path": task_path,
+                "channel": channel,
+                "type": "writes",
+                "value_type": val_type,
+                "value_data": base64.b64encode(val_bytes).decode("utf-8"),
+                "idx": idx
+            }
+            
+            try:
+                await self.container.upsert_item(doc)
+            except CosmosHttpResponseError as e:
+                logger.error(f"Failed to save writes to Cosmos DB: {e}")
+                raise e
+
     def put(self, config: RunnableConfig, checkpoint: Checkpoint, metadata: CheckpointMetadata, new_versions: dict[str, Any]) -> RunnableConfig:
         raise NotImplementedError("Use aput for async CosmosDB operations")
 
