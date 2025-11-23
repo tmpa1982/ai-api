@@ -17,7 +17,7 @@ from dto.chat_response import ChatResponse
 logger = logging.getLogger(__name__)
 
 class ChatBotGraph:
-    def __init__(self, llm):
+    def __init__(self, llm, checkpointer=None):
         graph_builder = StateGraph(InterviewState, input_schema=InterviewInputState)
 
         triage_agent = TriageAgent(llm)
@@ -29,7 +29,7 @@ class ChatBotGraph:
         graph_builder.add_node("evaluator_agent", evaluator_agent)
 
         graph_builder.add_edge(START, "triage_agent")
-        memory = InMemorySaver()
+        memory = checkpointer or InMemorySaver()
         self.graph = graph_builder.compile(checkpointer=memory)
 
     def invoke(self, message: str, terminate: bool, thread_id: str) -> ChatResponse:

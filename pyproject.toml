@@ -9,6 +9,7 @@ dependencies = [
     "anyio",
     "attrs",
     "azure-core",
+    "azure-cosmos>=4.14.2",
     "azure-identity",
     "azure-keyvault-secrets",
     "azure-storage-blob",
