@@ -30,4 +30,4 @@ graph = ChatBotGraph(llm, checkpointer=checkpointer)
 async def ask_question(request: CompletionRequest, user = Depends(check_role("APIUser"))) -> ChatResponse:
     user_email = user.get("preferred_username", "")
     thread_id = f"thread_{user_email}" if user_email else f"thread_{uuid.uuid4()}"
-    return graph.invoke(request.message, request.endInterview,thread_id)
+    return await graph.invoke(request.message, request.endInterview,thread_id)

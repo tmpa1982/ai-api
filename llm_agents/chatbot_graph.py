@@ -32,8 +32,8 @@ class ChatBotGraph:
         memory = checkpointer or InMemorySaver()
         self.graph = graph_builder.compile(checkpointer=memory)
 
-    def invoke(self, message: str, terminate: bool, thread_id: str) -> ChatResponse:
-        result = self.graph.invoke(
+    async def invoke(self, message: str, terminate: bool, thread_id: str) -> ChatResponse:
+        result = await self.graph.ainvoke(
             {
                 "messages": [HumanMessage(content=message)],
                 "end_interview": terminate,
