@@ -6,15 +6,15 @@ Interactive CLI test for the LangGraph chatbot
 import sys
 import os
 
+from llm_agents.chatbot_graph import ChatBotGraph
+from langchain.chat_models import init_chat_model
+
 # Add the parent directory to the path so we can import the chatbot
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from akv import AzureKeyVault
 akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
-
-from llm_agents.chatbot_graph import ChatBotGraph
-from langchain.chat_models import init_chat_model
 
 
 # from dotenv import load_dotenv
