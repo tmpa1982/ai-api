@@ -46,7 +46,7 @@ class STTService:
             
             # Transcribe with Whisper
             # Pass the file path directly - OpenAI SDK will handle it
-            with open(temp_file.name, "rb") as audio_file:
+            with open(temp_file.name, "rb"):
                 segments, _ = self.model.transcribe(temp_file.name)
                 # Concatenate all recognized text segments into a single string
                 transcript = "".join([segment.text for segment in segments])
