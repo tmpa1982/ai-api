@@ -1,7 +1,7 @@
 import logging
 
 from langchain_core.messages import HumanMessage
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import StateGraph, START
 from langgraph.checkpoint.memory import InMemorySaver
 
 from llm_agents.interview_agents.evaluator_agent import EvaluatorAgent
