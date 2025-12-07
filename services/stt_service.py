@@ -85,36 +85,36 @@ class STTService:
         
         # WebM: starts with 1A 45 DF A3 (EBML header)
         if header[:4] == b'\x1a\x45\xdf\xa3':
-            print(f"[STT] Detected WebM format")
+            print("[STT] Detected WebM format")
             return "webm"
         
         # WAV: starts with "RIFF" (52 49 46 46)
         if header[:4] == b'RIFF':
-            print(f"[STT] Detected WAV format")
+            print("[STT] Detected WAV format")
             return "wav"
         
         # MP3: starts with FF FB, FF F3, FF F2, or ID3 tag
         if header[0] == 0xFF and (header[1] & 0xE0) == 0xE0:
-            print(f"[STT] Detected MP3 format")
+            print("[STT] Detected MP3 format")
             return "mp3"
         if header[:3] == b'ID3':
-            print(f"[STT] Detected MP3 format (ID3 tag)")
+            print("[STT] Detected MP3 format (ID3 tag)")
             return "mp3"
         
         # M4A/MP4: starts with ftyp box (usually at offset 4)
         if len(audio_bytes) >= 8:
             if audio_bytes[4:8] == b'ftyp':
-                print(f"[STT] Detected M4A/MP4 format")
+                print("[STT] Detected M4A/MP4 format")
                 return "m4a"
         
         # OGG: starts with "OggS"
         if header[:4] == b'OggS':
-            print(f"[STT] Detected OGG format")
+            print("[STT] Detected OGG format")
             return "ogg"
         
         # FLAC: starts with "fLaC"
         if header[:4] == b'fLaC':
-            print(f"[STT] Detected FLAC format")
+            print("[STT] Detected FLAC format")
             return "flac"
         
         # Check if this looks like corrupted or invalid data
