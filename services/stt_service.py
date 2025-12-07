@@ -4,7 +4,6 @@ Speech-to-Text Service using OpenAI Whisper API.
 
 import tempfile
 import os
-from openai import OpenAI
 from faster_whisper import WhisperModel
 
 
