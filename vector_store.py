@@ -31,7 +31,7 @@ def upload_files():
 
             try:
                 file_response = client.files.create(file=open(download_path, 'rb'), purpose="assistants")
-                attach_response = client.vector_stores.files.create(
+                client.vector_stores.files.create(
                     vector_store_id=vector_store["id"],
                     file_id=file_response.id
                 )
