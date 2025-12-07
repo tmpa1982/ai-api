@@ -34,6 +34,9 @@ jobs:
         run: |
           uv run pytest test
 
+      - name: Run ruff
+        run: uvx ruff check
+
   deploy:
     runs-on: ubuntu-latest
     needs: build
