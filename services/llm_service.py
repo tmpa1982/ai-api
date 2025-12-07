@@ -11,7 +11,7 @@ from langchain.tools import tool
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader
+from langchain_community.document_loaders import PyPDFLoader
 
 class LLMService:
     def __init__(self, api_key: str, model: str = "gpt-4", tools: Optional[list] = None, system_prompt: Optional[str] = None,
