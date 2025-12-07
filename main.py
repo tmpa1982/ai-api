@@ -6,6 +6,9 @@ from fastapi.responses import RedirectResponse
 from logging_config import logging
 from akv import AzureKeyVault
 
+# Import routers
+from routers import speech, upload, langgraph, voice_agent
+
 akv = AzureKeyVault()
 os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
@@ -30,9 +33,6 @@ async def log_requests(request: Request, call_next):
     response = await call_next(request)
     logging.info(f"Response status: {response.status_code} for {request.method} {request.url}")
     return response
-
-# Import routers
-from routers import speech, upload, langgraph, voice_agent
 
 app.include_router(speech.router)
 app.include_router(upload.router)
