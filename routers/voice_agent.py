@@ -195,7 +195,7 @@ async def voice_agent_websocket(websocket: WebSocket):
                 })
     
     except WebSocketDisconnect:
-        print(f"[WS] Client disconnected")
+        print("[WS] Client disconnected")
     finally:
         # Cleanup
         audio_chunks.clear()
