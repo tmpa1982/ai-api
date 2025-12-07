@@ -6,6 +6,8 @@ Generate and save Mermaid diagram from LangGraph chatbot
 import os
 import sys
 
+from llm_agents.chatbot_graph import graph
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pathlib import Path
@@ -16,8 +18,6 @@ os.environ["OPENAI_API_KEY"] = akv.get_secret("openai-apikey")
 
 # Add the current directory to the path so we can import the chatbot
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from llm_agents.chatbot_graph import graph
 
 
 def generate_mermaid_diagram():
