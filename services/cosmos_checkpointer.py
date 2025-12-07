@@ -1,12 +1,8 @@
-import json
 import logging
 import base64
-from typing import Any, AsyncIterator, Dict, Optional, Sequence, Tuple
+from typing import Any, AsyncIterator, Dict, Optional, Sequence
 
-from azure.cosmos import CosmosClient
-from azure.cosmos.aio import CosmosClient as AsyncCosmosClient
 from azure.cosmos.exceptions import CosmosHttpResponseError
-from azure.core.exceptions import AzureError
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.base import (
     BaseCheckpointSaver,
