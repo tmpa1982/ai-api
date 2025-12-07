@@ -84,7 +84,6 @@ class CosmosDBSaver(BaseCheckpointSaver):
         """Get a checkpoint tuple from the database asynchronously."""
         thread_id = config["configurable"]["thread_id"]
         checkpoint_id = config["configurable"].get("checkpoint_id")
-        checkpoint_ns = config["configurable"].get("checkpoint_ns", "")
 
         if thread_id.startswith("thread_"):
             user_id = thread_id[7:]
